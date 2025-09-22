@@ -6,9 +6,12 @@
   "private": true,
   "license": "UNLICENSED",
    "scripts": {
-    "start": "node dist/main.js",
+    "build": "nest build",
+    "start": "nest start",
     "start:dev": "nest start --watch",
-    "build": "nest build"
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
