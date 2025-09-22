@@ -1,16 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
+import { AppModule } from '../src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import express, { Request, Response } from 'express';
+import express from 'express';
 
-let server: any;
+let cachedServer: any;
 
-export default async function handler(req: Request, res: Response) {
-  if (!server) {
+export default async function handler(req, res) {
+  if (!cachedServer) {
     const expressApp = express();
     const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
     await app.init();
-    server = expressApp;
+    cachedServer = expressApp;
   }
-  return server(req, res); // Express app là callable
+  return cachedServer(req, res); // Express app là callable
 }
