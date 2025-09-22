@@ -4,14 +4,13 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { GlobalException } from './core/exception/GlobalException';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-declare const module: {
-  hot: {
-    accept: () => void;
-    dispose: (callback: () => Promise<void>) => Promise<void>;
-  };
-};
-async function bootstrap() {
+import { Server } from 'http';
+
+let cachedServer: Server;
+
+async function bootstrapServer() {
   const app = await NestFactory.create(AppModule);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -32,7 +31,9 @@ async function bootstrap() {
       },
     }),
   );
+
   app.useGlobalFilters(new GlobalException());
+
   const config = new DocumentBuilder()
     .setTitle('E-Learning API')
     .setDescription('Api for E-Learning')
@@ -43,12 +44,18 @@ async function bootstrap() {
       'access-token',
     )
     .build();
+
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
-  await app.listen(process.env.PORT ?? 3000);
-  if (module.hot) {
-    module.hot.accept();
-    module.hot.dispose(() => app.close());
-  }
+
+  await app.init(); // ❗ KHÔNG dùng listen nữa
+  return app.getHttpAdapter().getInstance();
 }
-bootstrap();
+
+// ✅ Export default handler cho Vercel
+export default async function handler(req, res) {
+  if (!cachedServer) {
+    cachedServer = await bootstrapServer();
+  }
+  return cachedServer(req, res);
+}
