@@ -5,14 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-  "scripts": {
-    "build": "nest build",
+   "scripts": {
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
-    "vercel-build": "npm run build"
-  },
-  "engines": {
-    "node": "18.x"
+    "build": "nest build"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
