@@ -8,9 +8,10 @@ import { Server } from 'http';
 
 let cachedServer: Server;
 
-async function bootstrapServer() {
-  const app = await NestFactory.create(AppModule);
+async function bootstrapServer(): Promise<Server> {
+  const app = await NestFactory.create(AppModule, { bodyParser: true });
 
+  // ✅ Pipes
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -32,11 +33,13 @@ async function bootstrapServer() {
     }),
   );
 
+  // ✅ Global Exception
   app.useGlobalFilters(new GlobalException());
 
+  // ✅ Swagger
   const config = new DocumentBuilder()
     .setTitle('E-Learning API')
-    .setDescription('Api for E-Learning')
+    .setDescription('API for E-Learning')
     .setVersion('1.0')
     .addTag('E-Learning')
     .addBearerAuth(
@@ -44,16 +47,16 @@ async function bootstrapServer() {
       'access-token',
     )
     .build();
-
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  await app.init(); // ❗ KHÔNG dùng listen nữa
+  // ❗ Không dùng listen (serverless function không lắng cổng)
+  await app.init();
   return app.getHttpAdapter().getInstance();
 }
 
 // ✅ Export default handler cho Vercel
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   if (!cachedServer) {
     cachedServer = await bootstrapServer();
   }
