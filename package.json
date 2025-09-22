@@ -6,11 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-  "build": "nest build",
-  "start": "node dist/main.js",
-  "dev": "nest start --watch"
-}
-
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "dev": "nest start --watch"
+  },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.1",
