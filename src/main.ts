@@ -4,14 +4,13 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { GlobalException } from './core/exception/GlobalException';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Server } from 'http';
+import { Request, Response } from 'express';
 
-let cachedServer: Server;
+let cachedApp: any;
 
-async function bootstrapServer(): Promise<Server> {
-  const app = await NestFactory.create(AppModule, { bodyParser: true });
+async function bootstrapServer() {
+  const app = await NestFactory.create(AppModule);
 
-  // ✅ Pipes
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -33,13 +32,11 @@ async function bootstrapServer(): Promise<Server> {
     }),
   );
 
-  // ✅ Global Exception
   app.useGlobalFilters(new GlobalException());
 
-  // ✅ Swagger
   const config = new DocumentBuilder()
     .setTitle('E-Learning API')
-    .setDescription('API for E-Learning')
+    .setDescription('Api for E-Learning')
     .setVersion('1.0')
     .addTag('E-Learning')
     .addBearerAuth(
@@ -47,18 +44,17 @@ async function bootstrapServer(): Promise<Server> {
       'access-token',
     )
     .build();
+
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  // ❗ Không dùng listen (serverless function không lắng cổng)
   await app.init();
-  return app.getHttpAdapter().getInstance();
+  return app.getHttpAdapter().getInstance(); // ✅ Trả về Express app
 }
 
-// ✅ Export default handler cho Vercel
-export default async function handler(req: any, res: any) {
-  if (!cachedServer) {
-    cachedServer = await bootstrapServer();
+export default async function handler(req: Request, res: Response) {
+  if (!cachedApp) {
+    cachedApp = await bootstrapServer();
   }
-  return cachedServer(req, res);
+  return cachedApp(req, res); // ✅ Express app là callable
 }
