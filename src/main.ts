@@ -4,16 +4,14 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { GlobalException } from './core/exception/GlobalException';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Request, Response } from 'express';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express, { Express } from 'express';
-
-let cachedApp: Express;
-
-async function bootstrapServer(): Promise<Express> {
-  const server = express();
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
-
+declare const module: {
+  hot: {
+    accept: () => void;
+    dispose: (callback: () => Promise<void>) => Promise<void>;
+  };
+};
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -34,9 +32,7 @@ async function bootstrapServer(): Promise<Express> {
       },
     }),
   );
-
   app.useGlobalFilters(new GlobalException());
-
   const config = new DocumentBuilder()
     .setTitle('E-Learning API')
     .setDescription('Api for E-Learning')
@@ -47,19 +43,12 @@ async function bootstrapServer(): Promise<Express> {
       'access-token',
     )
     .build();
-
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
-
-  await app.init();
-
-  // ✅ Trả về Express app (callable)
-  return server;
-}
-
-export default async function handler(req: Request, res: Response) {
-  if (!cachedApp) {
-    cachedApp = await bootstrapServer();
+  await app.listen(process.env.PORT ?? 3000);
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
   }
-  return cachedApp(req, res); // ✅ Express app callable
 }
+bootstrap();
