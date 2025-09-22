@@ -5,10 +5,11 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { GlobalException } from './core/exception/GlobalException';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { Server } from 'http';
 
-let cachedApp: any;
+let cachedServer: Server;
 
-async function bootstrapServer() {
+async function bootstrapServer(): Promise<Server> {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
@@ -49,12 +50,14 @@ async function bootstrapServer() {
   SwaggerModule.setup('api', app, documentFactory);
 
   await app.init();
-  return app.getHttpAdapter().getInstance(); // ✅ Trả về Express app
+
+  // ✅ Trả về http server (callable)
+  return app.getHttpAdapter().getInstance();
 }
 
 export default async function handler(req: Request, res: Response) {
-  if (!cachedApp) {
-    cachedApp = await bootstrapServer();
+  if (!cachedServer) {
+    cachedServer = await bootstrapServer();
   }
-  return cachedApp(req, res); // ✅ Express app là callable
+  return (cachedServer as any)(req, res); // ✅ server là function nên gọi OK
 }
